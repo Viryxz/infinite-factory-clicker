@@ -1,0 +1,1149 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>無限工場クリッカー</title>
+
+<style>
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0b1020;
+  color: #edf2ff;
+  font-family: system-ui, sans-serif;
+}
+
+header {
+  padding: 22px;
+  background: #131c32;
+  text-align: center;
+  border-bottom: 1px solid #33415e;
+}
+
+h1 {
+  margin: 0 0 8px;
+  font-size: 26px;
+}
+
+main {
+  max-width: 1000px;
+  margin: auto;
+  padding: 16px;
+}
+
+.card {
+  background: #141e33;
+  border: 1px solid #2d3d5c;
+  border-radius: 15px;
+  padding: 16px;
+  margin-bottom: 15px;
+}
+
+.money {
+  font-size: clamp(28px, 7vw, 44px);
+  font-weight: 850;
+  color: #7ef0b2;
+  overflow-wrap: anywhere;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 15px;
+}
+
+.stat {
+  background: #0d1629;
+  padding: 10px;
+  border-radius: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  font-size: 12px;
+  color: #9baac5;
+}
+
+.center {
+  text-align: center;
+  margin-top: 8px;
+}
+
+button {
+  border: 1px solid #405477;
+  background: #22324f;
+  color: white;
+  padding: 11px;
+  border-radius: 9px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+button:disabled {
+  opacity: .4;
+  cursor: default;
+}
+
+button:not(:disabled):hover {
+  filter: brightness(1.15);
+}
+
+.primary {
+  background: #6758e8;
+  border-color: #887bff;
+}
+
+#click {
+  width: 100%;
+  font-size: 19px;
+  padding: 19px;
+  margin-top: 15px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fit, minmax(min(100%, 245px), 1fr));
+  gap: 9px;
+}
+
+.item {
+  padding: 12px;
+  background: #0e172a;
+  border: 1px solid #2c3b58;
+  border-radius: 11px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.item h3 {
+  font-size: 15px;
+  margin: 0 0 6px;
+}
+
+.item p {
+  font-size: 12px;
+  color: #9baac5;
+  margin: 6px 0 10px;
+}
+
+.item button {
+  width: 100%;
+  margin-top: 5px;
+}
+
+h2 {
+  font-size: 19px;
+  margin: 0 0 13px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.controls {
+  margin-bottom: 12px;
+}
+
+.full {
+  width: 100%;
+  margin-top: 12px;
+}
+
+input,
+select {
+  background: #0d1629;
+  color: white;
+  padding: 9px;
+  border: 1px solid #405477;
+  border-radius: 8px;
+  max-width: 100%;
+}
+
+.danger {
+  background: #572c3b;
+}
+
+footer {
+  text-align: center;
+  color: #8291ad;
+  font-size: 12px;
+  padding: 20px;
+}
+
+@media (max-width: 420px) {
+  main {
+    padding: 9px;
+  }
+
+  .card {
+    padding: 12px;
+  }
+
+  .stats {
+    gap: 5px;
+  }
+
+  .stat {
+    padding: 8px;
+  }
+}
+
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏭 無限工場クリッカー</h1>
+  <div class="muted">クリック・自動生産・研究・プレステージ</div>
+</header>
+
+<main>
+  <!-- 資金・基本ステータス -->
+  <section class="card">
+    <div class="muted">現在の資金</div>
+    <div id="money" class="money">0</div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="muted">毎秒生産</div>
+        <b id="income">0</b>
+      </div>
+      <div class="stat">
+        <div class="muted">次元コア</div>
+        <b id="cores">0</b>
+      </div>
+      <div class="stat">
+        <div class="muted">設備数</div>
+        <b id="owned">0</b>
+      </div>
+    </div>
+
+    <button id="click" class="primary">
+      ⚡ 資金を生み出す！
+    </button>
+    <div id="clickInfo" class="muted center"></div>
+  </section>
+
+  <!-- クリック倍率 -->
+  <section class="card">
+    <h2>⚡ クリック倍率ショップ</h2>
+    <p class="muted">購入した倍率は累積します。</p>
+    <div id="clickShop" class="grid"></div>
+  </section>
+
+  <!-- 研究 -->
+  <section class="card">
+    <h2>🔬 研究所</h2>
+    <div id="research" class="grid"></div>
+  </section>
+
+  <!-- 設備 -->
+  <section class="card">
+    <div class="row">
+      <h2>🏗️ 設備一覧（36種類）</h2>
+      <select id="filter">
+        <option value="all">すべて</option>
+        <option value="owned">所持中</option>
+        <option value="afford">購入可能</option>
+      </select>
+    </div>
+
+    <div class="row controls">
+      <label class="muted">
+        購入・強化数
+        <select id="buyMode">
+          <option value="1">×1</option>
+          <option value="10">×10</option>
+          <option value="max">最大</option>
+        </select>
+      </label>
+      <span id="equipmentCount" class="muted"></span>
+    </div>
+
+    <div id="equipment" class="grid"></div>
+  </section>
+
+  <!-- プレステージ -->
+  <section class="card">
+    <h2>🌌 プレステージ</h2>
+    <p class="muted">
+      資金と設備をリセットして次元コアを獲得。
+      次元コア1個につき全生産量が永続的に10%増加します。
+    </p>
+    <p>今回の獲得コア：<b id="gain">0</b></p>
+    <p>全体倍率：<b id="mult">×1.00</b></p>
+    <button id="prestige" class="full" disabled>
+      🔁 プレステージ
+    </button>
+  </section>
+
+  <!-- 実績 -->
+  <section class="card">
+    <h2>🏆 実績</h2>
+    <div id="achievements" class="grid"></div>
+  </section>
+
+  <!-- セーブ -->
+  <section class="card">
+    <h2>💾 セーブ管理</h2>
+    <p class="muted">
+      5秒ごとに自動保存します。
+      データはこのブラウザに保存されます。
+    </p>
+
+    <div class="row">
+      <button id="save">今すぐ保存</button>
+      <button id="export">データを書き出す</button>
+      <button id="import">データを読み込む</button>
+      <button id="reset" class="danger">全データ削除</button>
+      <input id="file" type="file"
+        accept=".json,application/json" hidden>
+    </div>
+
+    <p id="saveStatus" class="muted">起動中</p>
+  </section>
+</main>
+
+<footer>INFINITE FACTORY · 自分だけの巨大工場を作ろう</footer>
+
+<script>
+
+"use strict";
+
+const $ = id => document.getElementById(id);
+const SAVE_KEY = "infiniteFactorySave";
+
+// ========================================
+// 1. 設備データ
+// [名前, アイコン, 基本価格, 基本生産量]
+// ========================================
+
+const names = [
+  ["手作業","👆",0,1],
+  ["採掘機","⛏️",15,1],
+  ["発電機","⚡",100,6],
+  ["製錬炉","🔥",600,32],
+  ["組立機","⚙️",4000,180],
+  ["大型倉庫","📦",25000,950],
+  ["自動工場","🏭",150000,5200],
+  ["産業ロボット","🤖",900000,29000],
+  ["研究所","🔬",5500000,160000],
+  ["太陽光発電所","☀️",35000000,900000],
+  ["ドローン基地","🛸",220000000,5200000],
+  ["物流センター","🚚",1400000000,30000000],
+  ["核融合炉","☢️",9000000000,180000000],
+  ["量子製造機","🧬",60000000000,1100000000],
+  ["ナノ工場","🔩",400000000000,7000000000],
+  ["AI研究所","🧠",2800000000000,45000000000],
+  ["軌道工場","🛰️",20000000000000,300000000000],
+  ["月面採掘基地","🌕",150000000000000,2100000000000],
+  ["火星工場","🔴",1e15,1.5e13],
+  ["ダイソン球","🌞",8e15,1.1e14],
+  ["反物質炉","💠",6e16,8e14],
+  ["時空採掘機","🌀",5e17,6e15],
+  ["次元ゲート","🪐",4e18,5e16],
+  ["銀河工場","🌌",3e19,4e17],
+  ["恒星生成機","⭐",2e20,3e18],
+  ["宇宙創造炉","🌠",2e21,3e19],
+  ["因果律エンジン","⌛",2e22,3e20],
+  ["並行世界工場","♾️",2e23,3e21],
+  ["ビッグバン装置","💥",2e24,3e22],
+  ["無限生産機","∞",2e25,3e23],
+  ["超越炉","🔮",2e26,3e24],
+  ["神話級工場","👑",2e27,3e25],
+  ["虚無採掘機","🌑",2e28,3e26],
+  ["多元宇宙炉","🌐",2e29,3e27],
+  ["創世エンジン","✨",2e30,3e28],
+  ["究極の工場","🏆",2e31,3e29]
+];
+
+// ========================================
+// 2. クリック倍率ショップ
+// 各倍率は1回購入すると永続的に所有
+// ========================================
+
+const clickUpgrades = [
+  {
+    id: "x2",
+    name: "クリック ×2",
+    icon: "✌️",
+    mult: 2,
+    cost: 100,
+    desc: "クリック収益を2倍"
+  },
+  {
+    id: "x10",
+    name: "クリック ×10",
+    icon: "🔟",
+    mult: 10,
+    cost: 1e4,
+    desc: "クリック収益を10倍"
+  },
+  {
+    id: "x100",
+    name: "クリック ×100",
+    icon: "💯",
+    mult: 100,
+    cost: 1e7,
+    desc: "クリック収益を100倍"
+  },
+  {
+    id: "x10k",
+    name: "クリック ×10K",
+    icon: "🚀",
+    mult: 1e4,
+    cost: 1e12,
+    desc: "クリック収益を10,000倍"
+  },
+  {
+    id: "x100b",
+    name: "クリック ×100B",
+    icon: "🌌",
+    mult: 1e11,
+    cost: 1e20,
+    desc: "クリック収益を1,000億倍"
+  }
+];
+
+// ========================================
+// 3. 研究データ
+// ========================================
+
+const upgrades = [
+  {
+    key: "clickLv",
+    name: "強化タップ",
+    icon: "👆",
+    base: 100,
+    rate: 5,
+    desc: "基本クリック収益 +4"
+  },
+  {
+    key: "prodLv",
+    name: "生産効率研究",
+    icon: "🔬",
+    base: 1000,
+    rate: 8,
+    desc: "全生産量 +25%"
+  },
+  {
+    key: "offlineLv",
+    name: "オフライン研究",
+    icon: "🌙",
+    base: 5000,
+    rate: 10,
+    max: 10,
+    desc: "オフライン収益 +10%"
+  }
+];
+
+// ========================================
+// 4. セーブデータの初期状態
+// ========================================
+
+const fresh = () => ({
+  money: 0,
+  total: 0,
+  cores: 0,
+  runs: 0,
+
+  owned: Array(36).fill(0),
+  levels: Array(36).fill(0),
+
+  clickLv: 0,
+  prodLv: 0,
+  offlineLv: 0,
+
+  clickMults: {},
+  last: Date.now()
+});
+
+let s = fresh();
+let filter = "all";
+
+// ========================================
+// 5. 数値表示
+// ========================================
+
+function fmt(n) {
+  if (!Number.isFinite(n)) return "∞";
+  if (n < 0) return "-" + fmt(-n);
+
+  if (n < 1000) {
+    return n.toLocaleString("ja-JP", {
+      maximumFractionDigits: 1
+    });
+  }
+
+  const units = [
+    "", "K", "M", "B", "T",
+    "Qa", "Qi", "Sx", "Sp", "Oc", "No", "Dc"
+  ];
+
+  const t = Math.floor(Math.log10(n) / 3);
+
+  if (t < units.length) {
+    return (n / Math.pow(1000, t)).toFixed(2)
+      + " " + units[t];
+  }
+
+  return n.toExponential(2);
+}
+
+function safeNum(value, fallback = 0) {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0
+    ? n
+    : fallback;
+}
+
+// ========================================
+// 6. 価格と倍率の計算
+// ========================================
+
+// 設備の次回購入価格
+function price(i) {
+  return names[i][2] * Math.pow(1.16, s.owned[i]);
+}
+
+// 設備レベルの次回強化価格
+function levelCost(i, level = s.levels[i]) {
+  return names[i][2] * 10 * Math.pow(3, level);
+}
+
+// 次元コアと研究による全体倍率
+function mult() {
+  return (1 + s.cores * 0.1)
+       * (1 + s.prodLv * 0.25);
+}
+
+// 所有しているクリック倍率の積
+function clickUpgradeMult() {
+  return clickUpgrades.reduce((value, upgrade) => {
+    return value *
+      (s.clickMults[upgrade.id] ? upgrade.mult : 1);
+  }, 1);
+}
+
+// クリック1回の収益
+function clickPower() {
+  return (1 + s.clickLv * 4)
+       * clickUpgradeMult()
+       * mult();
+}
+
+// 設備レベル1ごとに生産量2倍
+function levelMultiplier(i) {
+  return Math.pow(2, s.levels[i]);
+}
+
+// 全設備の毎秒生産量
+function income() {
+  let base = 0;
+
+  for (let i = 0; i < names.length; i++) {
+    base += s.owned[i]
+      * names[i][3]
+      * levelMultiplier(i);
+  }
+
+  return base * mult();
+}
+
+// プレステージの獲得コア数
+function prestigeGain() {
+  return Math.max(
+    0,
+    Math.floor(Math.sqrt(s.total / 1e6)) - s.cores
+  );
+}
+
+// 資金を獲得
+function earn(amount) {
+  if (amount > 0 && Number.isFinite(amount)) {
+    s.money += amount;
+    s.total += amount;
+  }
+}
+
+// 資金を消費
+function spend(amount) {
+  if (
+    !Number.isFinite(amount) ||
+    amount < 0 ||
+    amount > s.money
+  ) {
+    return false;
+  }
+
+  s.money -= amount;
+  return true;
+}
+
+// ========================================
+// 7. セーブデータ互換処理
+// 旧バージョンの levels / clickMults がなくても読み込む
+// ========================================
+
+function normalizeSave(v) {
+  if (!v || typeof v !== "object") {
+    throw new Error("セーブデータが不正です");
+  }
+
+  if (!Array.isArray(v.owned) || v.owned.length !== 36) {
+    throw new Error("設備データが不正です");
+  }
+
+  if (!Number.isFinite(v.money) || v.money < 0) {
+    throw new Error("資金データが不正です");
+  }
+
+  const out = fresh();
+
+  out.money = v.money;
+  out.total = safeNum(v.total);
+  out.cores = safeNum(v.cores);
+  out.runs = safeNum(v.runs);
+
+  out.clickLv = Math.floor(safeNum(v.clickLv));
+  out.prodLv = Math.floor(safeNum(v.prodLv));
+  out.offlineLv = Math.min(
+    10,
+    Math.floor(safeNum(v.offlineLv))
+  );
+
+  out.owned = v.owned.map(value =>
+    Math.min(1e9, Math.floor(safeNum(value)))
+  );
+
+  // 新機能：設備レベル
+  out.levels =
+    Array.isArray(v.levels) && v.levels.length === 36
+      ? v.levels.map(value =>
+          Math.min(10000, Math.floor(safeNum(value)))
+        )
+      : Array(36).fill(0);
+
+  // 新機能：クリック倍率の購入状態
+  out.clickMults = {};
+
+  for (const upgrade of clickUpgrades) {
+    out.clickMults[upgrade.id] =
+      Boolean(v.clickMults && v.clickMults[upgrade.id]);
+  }
+
+  out.last = safeNum(v.last, Date.now()) || Date.now();
+
+  return out;
+}
+
+/* ========================================
+   8. セーブ・ロード
+======================================== */
+
+function save() {
+  try {
+    s.last = Date.now();
+    localStorage.setItem(SAVE_KEY, JSON.stringify(s));
+    $("saveStatus").textContent =
+      "保存済み：" + new Date().toLocaleTimeString();
+  } catch (e) {
+    $("saveStatus").textContent =
+      "保存できません。データを書き出してください。";
+  }
+}
+
+function load() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return;
+
+    const v = JSON.parse(raw);
+    s = normalizeSave(v);
+
+    // 最大8時間分のオフライン収益
+    const elapsed = Math.min(
+      28800,
+      Math.max(0, (Date.now() - s.last) / 1000)
+    );
+
+    const bonus =
+      income() * elapsed * Math.min(1, s.offlineLv * 0.1);
+
+    earn(bonus);
+
+    if (bonus > 0) {
+      setTimeout(() => {
+        alert("おかえりなさい！\nオフライン収益：" + fmt(bonus));
+      }, 100);
+    }
+  } catch (e) {
+    s = fresh();
+    $("saveStatus").textContent =
+      "セーブを読み込めませんでした。新規ゲームを開始します。";
+  }
+}
+
+/* ========================================
+   9. クリック倍率ショップ
+======================================== */
+
+function buyClickUpgrade(upgrade) {
+  if (s.clickMults[upgrade.id]) return;
+  if (s.money < upgrade.cost) return;
+
+  if (!spend(upgrade.cost)) return;
+
+  s.clickMults[upgrade.id] = true;
+  render();
+}
+
+function renderClickShop() {
+  $("clickShop").innerHTML = clickUpgrades.map(u => {
+    const bought = Boolean(s.clickMults[u.id]);
+
+    return `
+      <div class="item">
+        <h3>${u.icon} ${u.name}</h3>
+        <p>
+          ${u.desc}<br>
+          購入倍率：×${fmt(u.mult)}
+        </p>
+        <button data-clickup="${u.id}"
+          ${bought || s.money < u.cost ? "disabled" : ""}>
+          ${bought ? "✅ 購入済み" : fmt(u.cost) + " で購入"}
+        </button>
+      </div>
+    `;
+  }).join("");
+}
+
+/* ========================================
+   10. 研究購入
+======================================== */
+
+function buyResearch(upgrade) {
+  const lv = s[upgrade.key];
+
+  if (upgrade.max && lv >= upgrade.max) return;
+
+  const cost = upgrade.base * Math.pow(upgrade.rate, lv);
+
+  if (!Number.isFinite(cost) || s.money < cost) return;
+  if (!spend(cost)) return;
+
+  s[upgrade.key]++;
+  render();
+}
+
+function renderResearch() {
+  $("research").innerHTML = upgrades.map(u => {
+    const lv = s[u.key];
+    const cost = u.base * Math.pow(u.rate, lv);
+    const done = Boolean(u.max && lv >= u.max);
+
+    return `
+      <div class="item">
+        <h3>${u.icon} ${u.name} Lv.${lv}</h3>
+        <p>
+          ${u.desc}
+          ${u.max ? "(最大Lv." + u.max + ")" : ""}
+        </p>
+        <button data-up="${u.key}"
+          ${done || !Number.isFinite(cost) || s.money < cost
+            ? "disabled" : ""}>
+          ${done ? "MAX" : fmt(cost) + " で購入"}
+        </button>
+      </div>
+    `;
+  }).join("");
+}
+
+/* ========================================
+   11. 設備購入
+======================================== */
+
+function buyEquipment(i) {
+  if (i === 0 || i < 0 || i >= names.length) return;
+
+  const mode = $("buyMode").value;
+  const limit = mode === "max" ? 1000 : Number(mode);
+
+  let count = 0;
+  let cost = 0;
+
+  while (count < limit) {
+    const p = names[i][2] *
+      Math.pow(1.16, s.owned[i] + count);
+
+    if (!Number.isFinite(p) || p <= 0 || cost + p > s.money) {
+      break;
+    }
+
+    cost += p;
+    count++;
+  }
+
+  if (count === 0 || !spend(cost)) return;
+
+  s.owned[i] += count;
+  render();
+}
+
+/* ========================================
+   12. 設備レベルアップ
+======================================== */
+
+function upgradeEquipment(i) {
+  if (i < 1 || i >= names.length) return;
+  if (s.owned[i] <= 0) return;
+
+  const mode = $("buyMode").value;
+  const limit = mode === "max" ? 1000 : Number(mode);
+
+  let count = 0;
+  let cost = 0;
+
+  while (count < limit) {
+    const c = levelCost(i, s.levels[i] + count);
+
+    if (!Number.isFinite(c) || c <= 0 || cost + c > s.money) {
+      break;
+    }
+
+    cost += c;
+    count++;
+  }
+
+  if (count === 0 || !spend(cost)) return;
+
+  s.levels[i] += count;
+  render();
+}
+
+function renderEquipment() {
+  const entries = names.map((d, i) => ({
+    d,
+    i,
+    n: s.owned[i],
+    lv: s.levels[i],
+    p: price(i),
+    lc: levelCost(i)
+  }));
+
+  const filtered = entries
+    .filter(o => o.i !== 0)
+    .filter(o => {
+      if (filter === "owned") return o.n > 0;
+
+      if (filter === "afford") {
+        return s.money >= o.p ||
+          (o.n > 0 && s.money >= o.lc);
+      }
+
+      return true;
+    });
+
+  $("equipment").innerHTML = filtered.map(o => {
+    const production =
+      o.n * o.d[3] * levelMultiplier(o.i) * mult();
+
+    const buyDisabled =
+      !Number.isFinite(o.p) || s.money < o.p;
+
+    const levelDisabled =
+      o.n <= 0 ||
+      !Number.isFinite(o.lc) ||
+      s.money < o.lc;
+
+    return `
+      <div class="item">
+        <h3>${o.d[1]} ${o.d[0]} ×${fmt(o.n)}</h3>
+        <p>
+          設備レベル：Lv.${o.lv}<br>
+          レベル倍率：×${fmt(levelMultiplier(o.i))}<br>
+          生産量：+${fmt(production)}/秒<br>
+          次の購入価格：${fmt(o.p)}<br>
+          次のレベル強化：
+          ${o.n > 0 ? fmt(o.lc) : "設備購入後に解放"}
+        </p>
+        <button data-buy="${o.i}" ${buyDisabled ? "disabled" : ""}>
+          設備を購入
+        </button>
+        <button data-level="${o.i}"
+          ${levelDisabled ? "disabled" : ""}>
+          レベルアップ
+        </button>
+      </div>
+    `;
+  }).join("");
+
+  $("equipmentCount").textContent =
+    filtered.length + "種類表示 / 全" + names.length + "種類";
+}
+
+/* ========================================
+   13. 実績
+======================================== */
+
+function renderAchievements() {
+  const count = s.owned.reduce((a, b) => a + b, 0);
+
+  const achievements = [
+    ["初収益", s.total >= 100, "累計100の資金を獲得"],
+    ["小さな工場", count >= 10, "設備を10台所持"],
+    ["工場長", count >= 100, "設備を100台所持"],
+    ["億万長者", s.total >= 1e9, "累計10億を獲得"],
+    ["宇宙進出", s.owned.slice(18).some(n => n > 0),
+      "火星工場以降を購入"],
+    ["転生初心者", s.runs >= 1, "プレステージを1回実行"],
+    ["転生マスター", s.runs >= 5, "プレステージを5回実行"],
+    ["クリックの達人",
+      clickUpgrades.every(u => s.clickMults[u.id]),
+      "全クリック倍率を購入"],
+    ["強化工場", s.levels.some(l => l >= 10),
+      "いずれかの設備をLv.10にする"]
+  ];
+
+  $("achievements").innerHTML = achievements.map(([name, done, desc]) => `
+    <div class="item">
+      ${done ? "🏆" : "🔒"} <b>${name}</b>
+      <p>${desc}<br>${done ? "達成！" : "未達成"}</p>
+    </div>
+  `).join("");
+}
+
+/* ========================================
+   14. 画面更新
+======================================== */
+
+function render() {
+  $("money").textContent = fmt(s.money);
+  $("income").textContent = fmt(income()) + "/秒";
+  $("cores").textContent = fmt(s.cores);
+  $("owned").textContent = fmt(
+    s.owned.reduce((a, b) => a + b, 0)
+  );
+
+  $("clickInfo").textContent =
+    "1クリックあたり +" + fmt(clickPower());
+
+  $("gain").textContent = fmt(prestigeGain());
+  $("mult").textContent = "×" + mult().toFixed(2);
+  $("prestige").disabled = prestigeGain() < 1;
+
+  renderClickShop();
+  renderResearch();
+  renderEquipment();
+  renderAchievements();
+}
+
+/* ========================================
+   15. ボタンのイベント処理
+======================================== */
+
+// クリックして資金を獲得
+$("click").onclick = () => {
+  earn(clickPower());
+  render();
+};
+
+// クリック倍率の購入
+$("clickShop").onclick = e => {
+  const button = e.target.closest("[data-clickup]");
+  if (!button) return;
+
+  const upgrade = clickUpgrades.find(
+    u => u.id === button.dataset.clickup
+  );
+
+  if (upgrade) buyClickUpgrade(upgrade);
+};
+
+// 研究の購入
+$("research").onclick = e => {
+  const button = e.target.closest("[data-up]");
+  if (!button) return;
+
+  const upgrade = upgrades.find(
+    u => u.key === button.dataset.up
+  );
+
+  if (upgrade) buyResearch(upgrade);
+};
+
+// 設備購入・レベルアップ
+$("equipment").onclick = e => {
+  const buyButton = e.target.closest("[data-buy]");
+  const levelButton = e.target.closest("[data-level]");
+
+  if (buyButton) {
+    buyEquipment(Number(buyButton.dataset.buy));
+  } else if (levelButton) {
+    upgradeEquipment(Number(levelButton.dataset.level));
+  }
+};
+
+// 表示フィルター
+$("filter").onchange = e => {
+  filter = e.target.value;
+  render();
+};
+
+/* ========================================
+   16. プレステージ
+======================================== */
+
+$("prestige").onclick = () => {
+  const gain = prestigeGain();
+  if (gain < 1) return;
+
+  const ok = confirm(
+    "資金・設備・設備レベルをリセットして、次元コア " +
+    gain + " 個を獲得しますか？\n" +
+    "研究とクリック倍率は維持されます。"
+  );
+
+  if (!ok) return;
+
+  s.cores += gain;
+  s.runs++;
+  s.money = 0;
+  s.total = 0;
+  s.owned = Array(36).fill(0);
+  s.levels = Array(36).fill(0);
+
+  save();
+  render();
+};
+
+/* ========================================
+   17. セーブの書き出し・読み込み
+======================================== */
+
+$("save").onclick = save;
+
+$("export").onclick = () => {
+  save();
+
+  try {
+    const blob = new Blob(
+      [JSON.stringify(s, null, 2)],
+      { type: "application/json" }
+    );
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+
+    a.href = url;
+    a.download = "factory-save.json";
+    a.click();
+
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) {
+    alert("書き出しに失敗しました。");
+  }
+};
+
+$("import").onclick = () => $("file").click();
+
+$("file").onchange = e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const next = normalizeSave(data);
+
+      if (!confirm("現在のセーブデータを置き換えますか？")) {
+        return;
+      }
+
+      s = next;
+      save();
+      render();
+
+      alert("セーブデータを読み込みました。");
+    } catch (err) {
+      alert("セーブデータが正しくありません。");
+    } finally {
+      e.target.value = "";
+    }
+  };
+
+  reader.onerror = () => {
+    alert("ファイルを読み込めませんでした。");
+    e.target.value = "";
+  };
+
+  reader.readAsText(file);
+};
+
+/* ========================================
+   18. 全データ削除
+======================================== */
+
+$("reset").onclick = () => {
+  if (!confirm("全セーブデータを削除しますか？")) return;
+
+  localStorage.removeItem(SAVE_KEY);
+  s = fresh();
+
+  render();
+  save();
+};
+
+/* ========================================
+   19. ゲーム起動・自動生産・自動保存
+======================================== */
+
+load();
+render();
+
+let previous = Date.now();
+
+// 250msごとに生産量を計算
+setInterval(() => {
+  const now = Date.now();
+  const dt = Math.min(10, Math.max(0, (now - previous) / 1000));
+
+  previous = now;
+
+  earn(income() * dt);
+  render();
+}, 250);
+
+// 5秒ごとに保存
+setInterval(save, 5000);
+
+// タブを離れるときに保存
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) {
+    save();
+  } else {
+    previous = Date.now();
+  }
+});
+
+window.addEventListener("pagehide", save);
+
+</script>
+
+</body>
+</html>
